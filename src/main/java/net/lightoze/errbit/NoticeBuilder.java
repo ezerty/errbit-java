@@ -7,13 +7,16 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * @author Vladimir Kulev
  */
-public abstract class NoticeBuilder {
+public class NoticeBuilder {
+
     protected String apiKey;
     protected String environment;
+    protected LoggingEvent event;
 
     public NoticeBuilder setApiKey(String apiKey) {
         this.apiKey = apiKey;
@@ -22,6 +25,11 @@ public abstract class NoticeBuilder {
 
     public NoticeBuilder setEnvironment(String environment) {
         this.environment = environment;
+        return this;
+    }
+
+    public NoticeBuilder setEvent(LoggingEvent event) {
+        this.event = event;
         return this;
     }
 
@@ -45,7 +53,23 @@ public abstract class NoticeBuilder {
         return notifier;
     }
 
-    public abstract Error error();
+    public net.lightoze.errbit.api.Error error() {
+        Error error = new Error();
+        Throwable throwable = event.getThrowable();
+        if (throwable != null) {
+            error.setBacktrace(backtrace(throwable));
+            error.setClazz(throwable.getClass().getName());
+        } else {
+            error.setBacktrace(new Backtrace());
+            error.setClazz(event.getLoggerName());
+        }
+        String msg = event.getRenderedMessage();
+        if (StringUtils.isBlank(msg) && throwable != null) {
+            msg = throwable.toString();
+        }
+        error.setMessage(msg);
+        return error;
+    }
 
     public Backtrace backtrace(Throwable throwable) {
         Backtrace backtrace = new Backtrace();
@@ -88,7 +112,11 @@ public abstract class NoticeBuilder {
         return env;
     }
 
-    public abstract Request request();
+    public Request request() {
+        Request request = new Request();
+        request.setComponent(event.getLoggerName());
+        return request;
+    }
 
     public CurrentUser currentUser() {
         return null;

@@ -1,48 +1,73 @@
 package net.lightoze.errbit;
 
+import java.io.Serializable;
 import net.lightoze.errbit.api.Notice;
 import org.apache.commons.lang.Validate;
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.Level;
-import org.apache.log4j.helpers.LogLog;
-import org.apache.log4j.spi.LoggingEvent;
+import org.apache.logging.log4j.core.Filter;
+import org.apache.logging.log4j.core.Layout;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
+import org.apache.logging.log4j.core.config.plugins.PluginElement;
+import org.apache.logging.log4j.core.config.plugins.PluginFactory;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 
 /**
  * @author Vladimir Kulev
  */
-public class Log4jErrbitAppender extends AppenderSkeleton {
-    private Class<? extends Log4jNoticeBuilder> noticeBuilder = Log4jNoticeBuilder.class;
+public class Log4jErrbitAppender extends AbstractAppender {
+
+    private Class<? extends NoticeBuilder> noticeBuilder = NoticeBuilder.class;
     private NoticeSender sender;
     private String url;
     private String apiKey;
     private String environment;
     private boolean enabled = true;
 
-    public Log4jErrbitAppender() {
-        setThreshold(Level.ERROR);
+    protected Log4jErrbitAppender(String name, Filter filter,
+            Layout<? extends Serializable> layout, final boolean ignoreExceptions) {
+        super(name, filter, layout, ignoreExceptions);
     }
 
     @Override
-    protected void append(LoggingEvent event) {
+    public void append(final LogEvent event) {
         if (!enabled) {
             return;
         }
         try {
-            Log4jNoticeBuilder builder = noticeBuilder.newInstance();
+            NoticeBuilder builder = noticeBuilder.newInstance();
+            LoggingEvent loggingEvent = new net.lightoze.errbit.LoggingEvent() {
+
+                @Override
+                public Throwable getThrowable() {
+                    return event.getThrown();
+                }
+
+                @Override
+                public String getLoggerName() {
+                    return event.getLoggerName();
+                }
+
+                @Override
+                public String getRenderedMessage() {
+                    return event.getMessage().getFormattedMessage();
+                }
+            };
+
             Notice notice = builder
-                    .setEvent(event)
+                    .setEvent(loggingEvent)
                     .setApiKey(apiKey)
                     .setEnvironment(environment)
                     .build();
             sender.send(notice);
         } catch (Exception e) {
-            LogLog.warn("Could not send error notice", e);
+            LOGGER.warn("Could not send error notice", e);
         }
     }
 
     @SuppressWarnings("unchecked")
     public void setNoticeBuilder(String className) throws ClassNotFoundException {
-        noticeBuilder = (Class<? extends Log4jNoticeBuilder>) Thread.currentThread().getContextClassLoader().loadClass(className);
+        noticeBuilder = (Class<? extends NoticeBuilder>) Thread.currentThread().getContextClassLoader().loadClass(className);
     }
 
     public void setUrl(String url) {
@@ -61,7 +86,6 @@ public class Log4jErrbitAppender extends AppenderSkeleton {
         this.enabled = enabled;
     }
 
-    @Override
     public void activateOptions() {
         Validate.notNull(url);
         Validate.notNull(apiKey);
@@ -69,12 +93,28 @@ public class Log4jErrbitAppender extends AppenderSkeleton {
         sender = new NoticeSender(url);
     }
 
-    @Override
-    public void close() {
-    }
+    @PluginFactory
+    public static Log4jErrbitAppender createAppender(@PluginAttribute("name") String name,
+            @PluginElement("url") String url,
+            @PluginElement("apiKey") String apiKey,
+            @PluginElement("environment") String environment,
+            @PluginElement("Layout") Layout layout,
+            @PluginElement("Filters") Filter filter) {
+        if (layout == null) {
+            layout = PatternLayout.createDefaultLayout();
+        }
+        if (name == null) {
+            LOGGER.error("No name provided for Log4jErrbitAppender");
+            return null;
+        }
 
-    @Override
-    public boolean requiresLayout() {
-        return false;
+        Log4jErrbitAppender appender = new Log4jErrbitAppender(name, filter, layout, false);
+        appender.setUrl(url);
+        appender.setApiKey(apiKey);
+        appender.setEnvironment(environment);
+
+        appender.activateOptions();
+
+        return appender;
     }
 }
