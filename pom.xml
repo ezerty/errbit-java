@@ -14,8 +14,8 @@
     </parent>
 
     <name>Errbit Java notifier</name>
-    <description>Error catcher for Java applications. Log4j logger included.</description>
-    <url>https://github.com/lightoze/errbit-java</url>
+    <description>Error catcher for Java applications. This version is adapted to use log4j2.</description>
+    <url>https://github.com/ezerty/errbit-java</url>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -35,9 +35,9 @@
     </properties>
 
     <scm>
-        <url>https://github.com/lightoze/errbit-java</url>
-        <connection>scm:git:https://github.com/lightoze/errbit-java.git</connection>
-        <developerConnection>scm:git:git@github.com:lightoze/errbit-java.git</developerConnection>
+        <url>https://github.com/ezerty/errbit-java</url>
+        <connection>scm:git:https://github.com/ezerty/errbit-java.git</connection>
+        <developerConnection>scm:git:git@github.com:ezerty/errbit-java.git</developerConnection>
     </scm>
 
     <developers>
