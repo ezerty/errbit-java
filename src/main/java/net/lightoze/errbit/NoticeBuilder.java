@@ -49,7 +49,6 @@ public class NoticeBuilder {
         Notifier notifier = new Notifier();
         notifier.setName("errbit-java");
         notifier.setVersion("2.3");
-        notifier.setUrl("https://github.com/lightoze/errbit-java");
         return notifier;
     }
 

@@ -7,6 +7,7 @@ import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
@@ -15,6 +16,7 @@ import org.apache.logging.log4j.core.layout.PatternLayout;
 /**
  * @author Vladimir Kulev
  */
+@Plugin(name = "Log4jErrbit", category = "core", elementType = "appender", printObject = true)
 public class Log4jErrbitAppender extends AbstractAppender {
 
     private Class<? extends NoticeBuilder> noticeBuilder = NoticeBuilder.class;
@@ -95,9 +97,9 @@ public class Log4jErrbitAppender extends AbstractAppender {
 
     @PluginFactory
     public static Log4jErrbitAppender createAppender(@PluginAttribute("name") String name,
-            @PluginElement("url") String url,
-            @PluginElement("apiKey") String apiKey,
-            @PluginElement("environment") String environment,
+            @PluginAttribute("url") String url,
+            @PluginAttribute("apiKey") String apiKey,
+            @PluginAttribute("environment") String environment,
             @PluginElement("Layout") Layout layout,
             @PluginElement("Filters") Filter filter) {
         if (layout == null) {
